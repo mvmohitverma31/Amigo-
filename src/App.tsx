@@ -12,14 +12,13 @@ import { OnboardingPage } from './components/onboarding/OnboardingPage';
 import { AuthPage } from './components/auth/AuthPage';
 import { ToastProvider, useToast } from './components/ui/ToastProvider';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { getDemoAuthState, demoLogin, demoRegister, demoLogout, type DemoUser } from './auth/demoAuth';
+import { getDemoAuthState, demoGuestLogin, demoLogout } from './auth/demoAuth';
 
 function AppContent() {
   const { state } = useApp();
   const { addToast } = useToast();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [authState, setAuthState] = useState(getDemoAuthState());
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -38,30 +37,15 @@ function AppContent() {
 
   useKeyboardShortcuts(shortcuts);
 
-  // Handle login
-  const handleLogin = async (data: { email: string; password: string }) => {
+  const handleGuestEntry = async (displayName: string) => {
     setAuthLoading(true);
     setAuthError(null);
     try {
-      const result = await demoLogin(data.email, data.password);
+      const result = await demoGuestLogin(displayName);
       setAuthState(result);
-      addToast(`Welcome back, ${result.user?.displayName || 'User'}!`, 'success');
+      addToast(`Welcome, ${result.user?.displayName || 'there'}!`, 'success');
     } catch (err) {
-      setAuthError(err instanceof Error ? err.message : 'Login failed');
-    }
-    setAuthLoading(false);
-  };
-
-  // Handle register
-  const handleRegister = async (data: { email: string; password: string; displayName?: string }) => {
-    setAuthLoading(true);
-    setAuthError(null);
-    try {
-      const result = await demoRegister(data.email, data.password, data.displayName || '');
-      setAuthState(result);
-      addToast(`Account created! Welcome, ${result.user?.displayName || 'User'}.`, 'success');
-    } catch (err) {
-      setAuthError(err instanceof Error ? err.message : 'Registration failed');
+      setAuthError(err instanceof Error ? err.message : 'Unable to continue');
     }
     setAuthLoading(false);
   };
@@ -77,9 +61,7 @@ function AppContent() {
   if (!authState.isAuthenticated) {
     return (
       <AuthPage
-        mode={authMode}
-        onSwitchMode={() => { setAuthMode(m => m === 'login' ? 'register' : 'login'); setAuthError(null); }}
-        onSubmit={authMode === 'login' ? handleLogin : handleRegister}
+        onSubmit={handleGuestEntry}
         error={authError}
         loading={authLoading}
       />

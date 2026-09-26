@@ -1,28 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-surface-0: #0a0a0b;
-  --color-surface-1: #111113;
-  --color-surface-2: #1a1a1d;
-  --color-surface-3: #232327;
-  --color-surface-4: #2d2d32;
-  --color-border-subtle: #2a2a2f;
-  --color-border-default: #3a3a40;
-  --color-border-strong: #4a4a52;
-  --color-text-primary: #f0f0f2;
-  --color-text-secondary: #a0a0a8;
-  --color-text-tertiary: #6b6b75;
-  --color-text-muted: #4a4a52;
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
-  --color-accent-muted: #1e3a5f;
-  --color-success: #22c55e;
-  --color-success-muted: #14532d;
-  --color-warning: #f59e0b;
-  --color-warning-muted: #78350f;
-  --color-danger: #ef4444;
-  --color-danger-muted: #7f1d1d;
-  --color-info: #06b6d4;
+  --color-surface-0: #c8d6ce;
+  --color-surface-1: #202021;
+  --color-surface-2: #2b2b2d;
+  --color-surface-3: #3a3938;
+  --color-surface-4: #4b4946;
+  --color-border-subtle: #3c3b3b;
+  --color-border-default: #5a5752;
+  --color-border-strong: #747069;
+  --color-text-primary: #f7f1e8;
+  --color-text-secondary: #c2bbb1;
+  --color-text-tertiary: #928b83;
+  --color-text-muted: #6f6963;
+  --color-accent: #ff755f;
+  --color-accent-hover: #ff8a75;
+  --color-accent-muted: #61352f;
+  --color-success: #b6d9c1;
+  --color-success-muted: #294238;
+  --color-warning: #f4cf62;
+  --color-warning-muted: #5a4b22;
+  --color-danger: #ff7b70;
+  --color-danger-muted: #5c2f2b;
+  --color-info: #b6e2e6;
 }
 
 * {
@@ -39,8 +40,12 @@ body {
   margin: 0;
   background-color: var(--color-surface-0);
   color: var(--color-text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  font-family: 'DM Sans', 'Trebuchet MS', sans-serif;
   line-height: 1.5;
+}
+
+h1, h2, h3, h4, button {
+  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
 }
 
 :focus-visible {

@@ -52,6 +52,23 @@ export async function demoLogin(email: string, _password: string): Promise<AuthS
   return { user, isAuthenticated: true };
 }
 
+export async function demoGuestLogin(displayName: string): Promise<AuthState> {
+  const name = displayName.trim();
+  if (!name) {
+    throw new Error('Please enter your name');
+  }
+
+  const user: DemoUser = {
+    id: 'demo-user-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    email: '',
+    displayName: name,
+    createdAt: new Date().toISOString(),
+  };
+
+  localStorage.setItem(DEMO_USER_KEY, JSON.stringify(user));
+  return { user, isAuthenticated: true };
+}
+
 export async function demoRegister(
   email: string,
   _password: string,
