@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useApp } from '../../store/AppContext';
+import type { DemoUser } from '../../auth/demoAuth';
 
 interface LayoutProps {
   children: React.ReactNode;
   currentPage: string;
   onNavigate: (page: string) => void;
+  user?: DemoUser | null;
+  onLogout?: () => void;
 }
 
 const navItems = [
@@ -17,7 +20,7 @@ const navItems = [
   { id: 'settings', label: 'Settings', icon: '⚙' },
 ];
 
-export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
+export function Layout({ children, currentPage, onNavigate, user, onLogout }: LayoutProps) {
   const { state } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -49,7 +52,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
             </button>
           ))}
         </nav>
-        <div className="p-3 border-t border-border-subtle">
+        <div className="p-3 border-t border-border-subtle space-y-2">
           <div className="text-xs text-text-tertiary">
             <div className="flex justify-between">
               <span>Data level</span>
@@ -64,6 +67,20 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
               />
             </div>
           </div>
+          {user && (
+            <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
+              <span className="text-xs text-text-secondary truncate">{user.displayName || user.email}</span>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="text-xs text-text-tertiary hover:text-text-secondary transition-colors"
+                  aria-label="Sign out"
+                >
+                  Sign out
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </aside>
 

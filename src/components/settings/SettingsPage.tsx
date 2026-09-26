@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { useApp } from '../../store/AppContext';
 import { Card, Button, Input, Select, Toggle, Modal, Badge } from '../ui';
 
-export function SettingsPage() {
+interface SettingsPageProps {
+  onLogout?: () => void;
+  userEmail?: string;
+}
+
+export function SettingsPage({ onLogout, userEmail }: SettingsPageProps) {
   const { state, actions } = useApp();
   const { preferences, categories, tasks, executions } = state;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -189,7 +194,15 @@ export function SettingsPage() {
           <div className="mt-3 text-xs text-text-tertiary">
             <p>Version 1.0.0</p>
             <p>Data stored: IndexedDB (local)</p>
+            {userEmail && <p>Signed in as: {userEmail}</p>}
           </div>
+          {onLogout && (
+            <div className="mt-4 pt-3 border-t border-border-subtle">
+              <Button variant="secondary" size="sm" onClick={onLogout}>
+                Sign Out
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
 
