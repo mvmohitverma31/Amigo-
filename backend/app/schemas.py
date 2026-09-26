@@ -14,12 +14,23 @@ import re
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=8, max_length=128)
+    password: str = Field(..., min_length=12, max_length=128)
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=8, max_length=128)
-    display_name: Optional[str] = Field(None, max_length=100)
+    password: str = Field(..., min_length=12, max_length=128)
+    display_name: Optional[str] = Field(None, min_length=1, max_length=100)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """Validate password meets security policy."""
+        from .security import validate_password_strength, PasswordValidationError
+        try:
+            validate_password_strength(v)
+        except PasswordValidationError as e:
+            raise ValueError(str(e))
+        return v
 
 class UserPublic(BaseModel):
     id: str
@@ -125,7 +136,7 @@ class TaskResponse(BaseModel):
 class CreateTaskRequest(BaseModel):
     category_id: Optional[str] = None
     title: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000)
     estimated_duration_minutes: int = Field(..., ge=5, le=480)
     priority: str = Field("medium", pattern=r"^(critical|high|medium|low)$")
     is_fixed: bool = False
@@ -133,7 +144,7 @@ class CreateTaskRequest(BaseModel):
     is_recurring: bool = False
     recurrence_frequency: Optional[str] = Field(None, pattern=r"^(daily|weekly|custom)$")
     recurrence_days: Optional[List[int]] = Field(None, min_length=1, max_length=7)
-    recurrence_interval: Optional[int] = Field(None, gt=0)
+    recurrence_interval: Optional[int] = Field(None, gt=0, le=365)
     preferred_time_of_day: Optional[str] = Field(None, pattern=r"^(morning|afternoon|evening|night)$")
     deadline: Optional[date] = None
 
