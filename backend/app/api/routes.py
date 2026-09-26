@@ -5,7 +5,7 @@ All endpoints in one file for simplicity. In production, split into separate mod
 from datetime import datetime, timedelta, date
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +28,8 @@ from .security import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
     get_current_user, verify_ownership,
+    limiter, log_security_event,
+    PasswordValidationError,
 )
 
 
@@ -39,70 +41,100 @@ router = APIRouter()
 # ============================================================================
 
 @router.post("/auth/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")  # Rate limit: 5 registrations per minute per IP
+async def register(
+    request: Request,
+    register_data: RegisterRequest,
+    db: AsyncSession = Depends(get_db)
+):
     """Register a new user."""
-    # Check if email already exists
-    result = await db.execute(select(User).where(User.email == request.email))
-    if result.scalar_one_or_none():
+    try:
+        # Check if email already exists
+        result = await db.execute(select(User).where(User.email == register_data.email))
+        if result.scalar_one_or_none():
+            log_security_event("registration_failed", ip_address=request.client.host, details={"reason": "email_exists"})
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
+
+        # Create user
+        user = User(
+            email=register_data.email,
+            password_hash=hash_password(register_data.password),
+            display_name=register_data.display_name,
+        )
+        db.add(user)
+        await db.flush()
+
+        # Create default preferences
+        prefs = UserPreferences(user_id=user.id)
+        db.add(prefs)
+
+        # Create default categories
+        default_categories = [
+            ("Study", "#3b82f6"),
+            ("Exercise", "#22c55e"),
+            ("Work", "#f59e0b"),
+            ("Personal", "#8b5cf6"),
+        ]
+        for name, color in default_categories:
+            cat = TaskCategory(user_id=user.id, name=name, color=color)
+            db.add(cat)
+
+        await db.commit()
+
+        # Generate tokens
+        access_token = create_access_token(data={"sub": user.id})
+        refresh_token = create_refresh_token(data={"sub": user.id})
+
+        log_security_event("registration_success", user_id=user.id, ip_address=request.client.host)
+
+        return AuthResponse(
+            access_token=access_token,
+            user=UserPublic(
+                id=user.id,
+                email=user.email,
+                display_name=user.display_name,
+                created_at=user.created_at,
+            ),
+        )
+    except PasswordValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
+            detail=str(e),
         )
-
-    # Create user
-    user = User(
-        email=request.email,
-        password_hash=hash_password(request.password),
-        display_name=request.display_name,
-    )
-    db.add(user)
-    await db.flush()
-
-    # Create default preferences
-    prefs = UserPreferences(user_id=user.id)
-    db.add(prefs)
-
-    # Create default categories
-    default_categories = [
-        ("Study", "#3b82f6"),
-        ("Exercise", "#22c55e"),
-        ("Work", "#f59e0b"),
-        ("Personal", "#8b5cf6"),
-    ]
-    for name, color in default_categories:
-        cat = TaskCategory(user_id=user.id, name=name, color=color)
-        db.add(cat)
-
-    await db.commit()
-
-    # Generate tokens
-    access_token = create_access_token(data={"sub": user.id})
-    refresh_token = create_refresh_token(data={"sub": user.id})
-
-    return AuthResponse(
-        access_token=access_token,
-        user=UserPublic(
-            id=user.id,
-            email=user.email,
-            display_name=user.display_name,
-            created_at=user.created_at,
-        ),
-    )
 
 
 @router.post("/auth/login", response_model=AuthResponse)
-async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")  # Rate limit: 5 login attempts per minute per IP
+async def login(
+    request: Request,
+    login_data: LoginRequest,
+    db: AsyncSession = Depends(get_db)
+):
     """Login with email and password."""
-    result = await db.execute(select(User).where(User.email == request.email))
+    result = await db.execute(select(User).where(User.email == login_data.email))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(request.password, user.password_hash):
+    if not user or not verify_password(login_data.password, user.password_hash):
+        log_security_event(
+            "login_failed",
+            ip_address=request.client.host,
+            details={"email": login_data.email, "reason": "invalid_credentials"}
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
 
     if not user.is_active or user.deleted_at:
+        log_security_event(
+            "login_failed",
+            user_id=user.id,
+            ip_address=request.client.host,
+            details={"reason": "account_inactive"}
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is inactive",
@@ -110,6 +142,8 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
 
     access_token = create_access_token(data={"sub": user.id})
     refresh_token = create_refresh_token(data={"sub": user.id})
+
+    log_security_event("login_success", user_id=user.id, ip_address=request.client.host)
 
     return AuthResponse(
         access_token=access_token,
