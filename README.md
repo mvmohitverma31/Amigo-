@@ -2,8 +2,6 @@
 
 Amigo is an offline-first adaptive scheduler for people whose plans need to reflect reality. It combines constraint-aware planning, execution tracking, and behavioral analysis to improve future schedules without pretending to know more than the available data supports.
 
-<!-- Task snapshot 78965a73-805d-4a3b-aee6-8d70aff73547: the credential gate was replaced with local name-only onboarding so the Phase 1 product can start without account friction or a backend dependency. -->
-
 ## Project Status
 
 | Area | Status | Implementation |
