@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Environment variables (NEVER commit secrets)
+.env
+.env.local
+.env.production
+backend/.env
+backend/.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+backend/logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+
+# Secrets
+*.pem
+*.key
+*.crt
+ssl/
+backups/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.nyc_output/
+
+# Misc
+.cache/
+.tmp/
+temp/
+.next/
